@@ -1,9 +1,15 @@
+/*
+package Laptev.Core;
+
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 
 import java.awt.*;
+
+import static Laptev.Core.Controller.*;
+
 public class Filter {
-void filter3x3(int[][] H, int c) {
+    void filter3x3(int[][] H, int c) {
         if (sourceImg != null) {
             for (int y = 1; y < sourceImgHeight - 1; y++) {
                 for (int x = 1; x < sourceImgWidth - 1; x++) {
@@ -163,3 +169,4 @@ void filter3x3(int[][] H, int c) {
         }
     }
 }
+*/

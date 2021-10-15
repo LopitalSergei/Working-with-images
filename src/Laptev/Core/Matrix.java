@@ -1,3 +1,5 @@
+package Laptev.Core;
+
 public class Matrix {
     static int[][] H1 = new int[][]{
             {1, 1, 1},
