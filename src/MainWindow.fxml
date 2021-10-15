@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.*?>
+<?import javafx.scene.image.*?>
+<?import javafx.scene.layout.*?>
+
+<VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Controller">
+    <MenuBar>
+        <Menu mnemonicParsing="false" text="File">
+            <MenuItem mnemonicParsing="false" onAction="#openFile" text="Open" />
+            <MenuItem mnemonicParsing="false" onAction="#saveFile" text="Save" />
+            <MenuItem mnemonicParsing="false" onAction="#undo" text="Undo" />
+            <MenuItem mnemonicParsing="false" onAction="#redo" text="Redo" />
+        </Menu>
+        <Menu mnemonicParsing="false" text="Instrument">
+            <MenuItem mnemonicParsing="false" onAction="#binary" text="Binary" />
+            <MenuItem mnemonicParsing="false" onAction="#halftone" text="Halftone" />
+            <MenuItem mnemonicParsing="false" onAction="#negative" text="Negative" />
+            <MenuItem mnemonicParsing="false" onAction="#brightness" text="Brightness" />
+            <MenuItem mnemonicParsing="false" onAction="#contrast" text="Contrast" />
+        </Menu>
+        <Menu mnemonicParsing="false" text="Filters">
+            <MenuItem mnemonicParsing="false" onAction="#lfFilter" text="lfFilter" />
+            <MenuItem mnemonicParsing="false" onAction="#hfFilter" text="hfFilter" />
+        </Menu>
+    </MenuBar>
+    <ImageView fx:id="imgView" fitHeight="450.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" />
+</VBox>

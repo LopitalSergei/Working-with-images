@@ -2,7 +2,6 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -16,22 +15,36 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 
 public class Controller {
-
     @FXML
-    public MenuItem openFile;
-    public MenuItem saveFile;
     public ImageView imgView;
-    public VBox MainScene;
-    public MenuItem binary;
-    public MenuItem halftone;
-    public MenuItem negative;
-    public MenuItem brightness;
-    public MenuItem contrast;
 
-    static Image sourceImg = null;
+    static ArrayList<Image> arrayImgList = new ArrayList<>();
+    static int count;
+    static Image sourceImg;
+    static BufferedImage source;
+    static BufferedImage result;
+    static int sourceImgWidth;
+    static int sourceImgHeight;
     static double u = 1;
+
+    static int[][] redMatrix;
+    static int[][] greenMatrix;
+    static int[][] blueMatrix;
+
+    private void setMatrix() {
+        for (int y = 0; y < sourceImgHeight; y++) {
+            for (int x = 0; x < sourceImgWidth; x++) {
+                Color color = new Color(source.getRGB(x, y));
+
+                redMatrix[y][x] = color.getRed();
+                greenMatrix[y][x] = color.getGreen();
+                blueMatrix[y][x] = color.getBlue();
+            }
+        }
+    }
 
     @FXML
     private void openFile() {
@@ -46,10 +59,24 @@ public class Controller {
         File file = fileChooser.showOpenDialog(null);
 
         if (file != null) {
-            System.out.println("Процесс открытия файла");
+            System.out.println("Процесс открытия файла...");
             Image image = new Image(file.toURI().toString());
             imgView.setImage(image);
             sourceImg = image;
+            sourceImgWidth = (int) image.getWidth();
+            sourceImgHeight = (int) image.getHeight();
+            source = SwingFXUtils.fromFXImage(sourceImg, null);
+            result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
+
+            arrayImgList.clear();
+            arrayImgList.add(image);
+            count = 0;
+
+            redMatrix = new int[sourceImgHeight][sourceImgWidth];
+            greenMatrix = new int[sourceImgHeight][sourceImgWidth];
+            blueMatrix = new int[sourceImgHeight][sourceImgWidth];
+
+            setMatrix();
 
             System.out.println("Файл открыт\n");
         } else {
@@ -71,9 +98,9 @@ public class Controller {
         File file = fileChooser.showSaveDialog(null);
 
         if (file != null) {
-            System.out.println("Процесс сохранения файла");
+            System.out.println("Процесс сохранения файла...");
 
-            if (imgView.getImage() != null) {
+            if (sourceImg != null) {
 
                 ImageIO.write(SwingFXUtils.fromFXImage(imgView.getImage(), null), "png", file);
 
@@ -96,15 +123,12 @@ public class Controller {
         }
     }
 
+    int black = 0;
+    int white = 255;
+
     private void binaryFoo(int brightnessCoef) {
-        BufferedImage source = SwingFXUtils.fromFXImage(sourceImg, null);
-        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-
-        int black = 0;
-        int white = 255;
-
-        for (int x = 0; x < source.getWidth(); x++) {
-            for (int y = 0; y < source.getHeight(); y++) {
+        for (int y = 0; y < sourceImgHeight; y++) {
+            for (int x = 0; x < sourceImgWidth; x++) {
                 Color color = new Color(source.getRGB(x, y));
 
                 int gray = (color.getRed() + color.getGreen() + color.getBlue()) / 3;
@@ -120,16 +144,15 @@ public class Controller {
         }
         Image pict = SwingFXUtils.toFXImage(result, null);
         imgView.setImage(pict);
+        arrayImgList.add(pict);
+        count++;
     }
 
     @FXML
     public void halftone() {
         if (sourceImg != null) {
-            BufferedImage source = SwingFXUtils.fromFXImage(sourceImg, null);
-            BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-
-            for (int x = 0; x < source.getWidth(); x++) {
-                for (int y = 0; y < source.getHeight(); y++) {
+            for (int y = 0; y < sourceImgHeight; y++) {
+                for (int x = 0; x < sourceImgWidth; x++) {
                     Color color = new Color(source.getRGB(x, y));
 
                     int red = color.getRed();
@@ -142,8 +165,11 @@ public class Controller {
                     result.setRGB(x, y, newColor.getRGB());
                 }
             }
+
             Image pict = SwingFXUtils.toFXImage(result, null);
             imgView.setImage(pict);
+            arrayImgList.add(pict);
+            count++;
 
             System.out.println("Полутоновое изображение\n");
         } else {
@@ -154,12 +180,8 @@ public class Controller {
     @FXML
     public void negative() {
         if (sourceImg != null) {
-            BufferedImage source = SwingFXUtils.fromFXImage(sourceImg, null);
-            BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-
-            for (int x = 0; x < source.getWidth(); x++) {
-                for (int y = 0; y < source.getHeight(); y++) {
-
+            for (int y = 0; y < sourceImgHeight; y++) {
+                for (int x = 0; x < sourceImgWidth; x++) {
                     Color color = new Color(source.getRGB(x, y));
 
                     int red = color.getRed();
@@ -177,7 +199,9 @@ public class Controller {
             }
             Image pict = SwingFXUtils.toFXImage(result, null);
             imgView.setImage(pict);
-            sourceImg = pict;
+            arrayImgList.add(pict);
+            count++;
+
             System.out.println("Негативное изображение\n");
         } else {
             System.out.println("Изображение не найдено\n");
@@ -195,11 +219,8 @@ public class Controller {
     }
 
     private void brightnessFoo(int c) {
-        BufferedImage source = SwingFXUtils.fromFXImage(sourceImg, null);
-        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-
-        for (int x = 0; x < source.getWidth(); x++) {
-            for (int y = 0; y < source.getHeight(); y++) {
+        for (int y = 0; y < sourceImgHeight; y++) {
+            for (int x = 0; x < sourceImgWidth; x++) {
                 Color color = new Color(source.getRGB(x, y));
 
                 int red = color.getRed();
@@ -223,6 +244,8 @@ public class Controller {
         }
         Image pict = SwingFXUtils.toFXImage(result, null);
         imgView.setImage(pict);
+        arrayImgList.add(pict);
+        count++;
     }
 
     @FXML
@@ -236,11 +259,8 @@ public class Controller {
     }
 
     private void contrastFoo(double c) {
-        BufferedImage source = SwingFXUtils.fromFXImage(sourceImg, null);
-        BufferedImage result = new BufferedImage(source.getWidth(), source.getHeight(), source.getType());
-
-        for (int x = 0; x < source.getWidth(); x++) {
-            for (int y = 0; y < source.getHeight(); y++) {
+        for (int y = 0; y < sourceImgHeight; y++) {
+            for (int x = 0; x < sourceImgWidth; x++) {
                 Color color = new Color(source.getRGB(x, y));
 
                 int red = color.getRed();
@@ -250,12 +270,20 @@ public class Controller {
                 int newRed = (int) (c * Math.pow(red, u));
                 if (newRed > 255)
                     newRed = 255;
+                else if (newRed < 0)
+                    newRed = 0;
+
                 int newGreen = (int) (c * Math.pow(green, u));
                 if (newGreen > 255)
                     newGreen = 255;
+                else if (newGreen < 0)
+                    newGreen = 0;
+
                 int newBlue = (int) (c * Math.pow(blue, u));
                 if (newBlue > 255)
                     newBlue = 255;
+                else if (newBlue < 0)
+                    newBlue = 0;
 
                 Color newColor = new Color(newRed, newGreen, newBlue);
 
@@ -264,6 +292,8 @@ public class Controller {
         }
         Image pict = SwingFXUtils.toFXImage(result, null);
         imgView.setImage(pict);
+        arrayImgList.add(pict);
+        count++;
     }
 
     private void openSliderBinary() {
@@ -367,4 +397,47 @@ public class Controller {
         slider1.valueProperty().addListener((observable, oldValue, newValue) -> contrastFoo(newValue.doubleValue()));
         slider2.valueProperty().addListener((observable, oldValue, newValue) -> u = newValue.doubleValue());
     }
+
+    public void undo() {
+        if (count > 0) {
+            count--;
+            imgView.setImage(arrayImgList.get(count));
+        } else {
+            System.out.println("Конец массива\n");
+        }
+    }
+
+    public void redo() {
+        if (count < arrayImgList.size() - 1) {
+            count++;
+            imgView.setImage(arrayImgList.get(count));
+        } else {
+            System.out.println("Конец массива\n");
+        }
+    }
+
+    @FXML
+    public void lfFilter() {
+        filter3x3(H1, c1);
+        //    filter5x5(H1_5x5, c1_5x5);
+        //    filter7x7(H1_7x7, c1_7x7);
+    }
+
+    @FXML
+    public void hfFilter() {
+        filter3x3(H2, 1);
+    }
+
+    static int[][] H1 = new int[][]{
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+    };
+    static int c1 = 9;
+
+    static int[][] H2 = new int[][]{
+            {1, 1, 1},
+            {1, 2, 1},
+            {1, 1, 1}
+    };
 }

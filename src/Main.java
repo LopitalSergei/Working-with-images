@@ -16,7 +16,7 @@ public class Main extends Application {
     public void start(Stage primaryStage) {
         try {
             FXMLLoader loader = new FXMLLoader();
-            loader.setLocation(getClass().getResource("lab 1.fxml"));
+            loader.setLocation(getClass().getResource("MainWindow.fxml"));
             Parent root = loader.load();
 
             primaryStage.getIcons().add(new Image("icon.png"));
