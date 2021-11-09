@@ -2,21 +2,40 @@ package Laptev.Core;
 
 import javafx.embed.swing.SwingFXUtils;
 import javafx.fxml.FXML;
+import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
+import javafx.geometry.Insets;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.Slider;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.ColumnConstraints;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.RowConstraints;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
+import org.opencv.core.Scalar;
+import org.opencv.imgcodecs.Imgcodecs;
+import org.opencv.imgproc.Imgproc;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -25,9 +44,25 @@ import static Laptev.Core.Matrix.*;
 public class Controller {
     @FXML
     public ImageView imgView;
+    public MenuItem save;
+    public MenuItem undo_id;
+    public MenuItem redo_id;
+    public TextField text1;
+    public TextField text2;
+    public TextField text3;
+    public TextField text4;
+    public TextField text5;
+    public TextField text6;
+    public TextField text7;
+    public TextField text8;
+    public TextField text9;
+    public Button btn;
 
     static ArrayList<Image> arrayImgList = new ArrayList<>();
     static int count;
+
+    static File fileImg;
+
     static Image sourceImg;
     static BufferedImage source;
     static BufferedImage result;
@@ -39,9 +74,7 @@ public class Controller {
     static int[][] greenMatrix;
     static int[][] blueMatrix;
 
-    public ImageView getImgView() {
-        return imgView;
-    }
+    private static final int[][] matrix = new int[3][3];
 
     private void setMatrix() {
         for (int y = 0; y < sourceImgHeight; y++) {
@@ -56,7 +89,7 @@ public class Controller {
     }
 
     @FXML
-    private void openFile() {
+    public void openFile() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Picture");
         fileChooser.setInitialDirectory(new File("D:\\pict"));
@@ -65,11 +98,11 @@ public class Controller {
                 new FileChooser.ExtensionFilter("BMP", "*.bmp"),
                 new FileChooser.ExtensionFilter("PNG", "*.png")
         );
-        File file = fileChooser.showOpenDialog(null);
+        fileImg = fileChooser.showOpenDialog(null);
 
-        if (file != null) {
+        if (fileImg != null) {
             System.out.println("Процесс открытия файла...");
-            Image image = new Image(file.toURI().toString());
+            Image image = new Image(fileImg.toURI().toString());
             imgView.setImage(image);
             sourceImg = image;
             sourceImgWidth = (int) image.getWidth();
@@ -94,7 +127,7 @@ public class Controller {
     }
 
     @FXML
-    private void saveFile() throws IOException {
+    public void saveFile() throws IOException {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setInitialDirectory(new File("D:\\save_pict"));
         fileChooser.setTitle("Save Picture");
@@ -125,24 +158,21 @@ public class Controller {
     @FXML
     public void binary() {
         if (sourceImg != null) {
-            openSliderBinary();
+            createSlider("Бинаризация", 0, 255, 200, 10, 50, 4);
             System.out.println("Бинарное изображение\n");
         } else {
             System.out.println("Изображение не найдено\n");
         }
     }
 
-    int black = 0;
-    int white = 255;
-
     private void binaryFoo(int brightnessCoef) {
+        int black = 0;
+        int white = 255;
         for (int y = 0; y < sourceImgHeight; y++) {
             for (int x = 0; x < sourceImgWidth; x++) {
-                Color color = new Color(source.getRGB(x, y));
+                int gray = (redMatrix[y][x] + greenMatrix[y][x] + blueMatrix[y][x]) / 3;
 
-                int gray = (color.getRed() + color.getGreen() + color.getBlue()) / 3;
                 Color newColor;
-
                 if (gray >= brightnessCoef) {
                     newColor = new Color(white, white, white);
                 } else {
@@ -151,6 +181,10 @@ public class Controller {
                 result.setRGB(x, y, newColor.getRGB());
             }
         }
+        setImage(result);
+    }
+
+    private void setImage(BufferedImage result) {
         Image pict = SwingFXUtils.toFXImage(result, null);
         imgView.setImage(pict);
         arrayImgList.add(pict);
@@ -162,23 +196,13 @@ public class Controller {
         if (sourceImg != null) {
             for (int y = 0; y < sourceImgHeight; y++) {
                 for (int x = 0; x < sourceImgWidth; x++) {
-                    Color color = new Color(source.getRGB(x, y));
-
-                    int red = color.getRed();
-                    int green = color.getGreen();
-                    int blue = color.getBlue();
-
-                    int grey = (int) (red * 0.299 + green * 0.587 + blue * 0.114);
+                    int grey = (int) (redMatrix[y][x] * 0.299 + greenMatrix[y][x] * 0.587 + blueMatrix[y][x] * 0.114);
 
                     Color newColor = new Color(grey, grey, grey);
                     result.setRGB(x, y, newColor.getRGB());
                 }
             }
-
-            Image pict = SwingFXUtils.toFXImage(result, null);
-            imgView.setImage(pict);
-            arrayImgList.add(pict);
-            count++;
+            setImage(result);
 
             System.out.println("Полутоновое изображение\n");
         } else {
@@ -191,25 +215,17 @@ public class Controller {
         if (sourceImg != null) {
             for (int y = 0; y < sourceImgHeight; y++) {
                 for (int x = 0; x < sourceImgWidth; x++) {
-                    Color color = new Color(source.getRGB(x, y));
-
-                    int red = color.getRed();
-                    int green = color.getGreen();
-                    int blue = color.getBlue();
-
-                    int newRed = 255 - red;
-                    int newGreen = 255 - green;
-                    int newBlue = 255 - blue;
+                    int newRed = 255 - redMatrix[y][x];
+                    int newGreen = 255 - greenMatrix[y][x];
+                    int newBlue = 255 - blueMatrix[y][x];
 
                     Color newColor = new Color(newRed, newGreen, newBlue);
 
                     result.setRGB(x, y, newColor.getRGB());
                 }
             }
-            Image pict = SwingFXUtils.toFXImage(result, null);
-            imgView.setImage(pict);
-            arrayImgList.add(pict);
-            count++;
+            setImage(result);
+            sourceImg = SwingFXUtils.toFXImage(result, null);
 
             System.out.println("Негативное изображение\n");
         } else {
@@ -220,7 +236,7 @@ public class Controller {
     @FXML
     public void brightness() {
         if (sourceImg != null) {
-            openSliderBrightness();
+            createSlider("Яркость", 0, 100, 50, 5, 25, 4);
             System.out.println("Яркость изменена\n");
         } else {
             System.out.println("Изображение не найдено\n");
@@ -230,19 +246,15 @@ public class Controller {
     private void brightnessFoo(int c) {
         for (int y = 0; y < sourceImgHeight; y++) {
             for (int x = 0; x < sourceImgWidth; x++) {
-                Color color = new Color(source.getRGB(x, y));
-
-                int red = color.getRed();
-                int green = color.getGreen();
-                int blue = color.getBlue();
-
-                int newRed = (int) (c * Math.log(red + 1));
+                int newRed = (int) (c * Math.log(redMatrix[y][x] + 1));
                 if (newRed > 255)
                     newRed = 255;
-                int newGreen = (int) (c * Math.log(green + 1));
+
+                int newGreen = (int) (c * Math.log(greenMatrix[y][x] + 1));
                 if (newGreen > 255)
                     newGreen = 255;
-                int newBlue = (int) (c * Math.log(blue + 1));
+
+                int newBlue = (int) (c * Math.log(blueMatrix[y][x] + 1));
                 if (newBlue > 255)
                     newBlue = 255;
 
@@ -251,16 +263,13 @@ public class Controller {
                 result.setRGB(x, y, newColor.getRGB());
             }
         }
-        Image pict = SwingFXUtils.toFXImage(result, null);
-        imgView.setImage(pict);
-        arrayImgList.add(pict);
-        count++;
+        setImage(result);
     }
 
     @FXML
     public void contrast() {
         if (sourceImg != null) {
-            openSliderContrast();
+            createSlider("Котрастность", 0, 10, 5, 0.2, 1, 4);
             System.out.println("Контрастность изменена\n");
         } else {
             System.out.println("Изображение не найдено\n");
@@ -270,25 +279,19 @@ public class Controller {
     private void contrastFoo(double c) {
         for (int y = 0; y < sourceImgHeight; y++) {
             for (int x = 0; x < sourceImgWidth; x++) {
-                Color color = new Color(source.getRGB(x, y));
-
-                int red = color.getRed();
-                int green = color.getGreen();
-                int blue = color.getBlue();
-
-                int newRed = (int) (c * Math.pow(red, u));
+                int newRed = (int) (c * Math.pow(redMatrix[y][x], u));
                 if (newRed > 255)
                     newRed = 255;
                 else if (newRed < 0)
                     newRed = 0;
 
-                int newGreen = (int) (c * Math.pow(green, u));
+                int newGreen = (int) (c * Math.pow(greenMatrix[y][x], u));
                 if (newGreen > 255)
                     newGreen = 255;
                 else if (newGreen < 0)
                     newGreen = 0;
 
-                int newBlue = (int) (c * Math.pow(blue, u));
+                int newBlue = (int) (c * Math.pow(blueMatrix[y][x], u));
                 if (newBlue > 255)
                     newBlue = 255;
                 else if (newBlue < 0)
@@ -299,114 +302,67 @@ public class Controller {
                 result.setRGB(x, y, newColor.getRGB());
             }
         }
-        Image pict = SwingFXUtils.toFXImage(result, null);
-        imgView.setImage(pict);
-        arrayImgList.add(pict);
-        count++;
+        setImage(result);
     }
 
-    private void openSliderBinary() {
+    private void createSlider(String title, int v, int v1, int v2, double inc, int major, int minor) {
         Stage stage = new Stage();
         stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("Бинаризация");
+        stage.setTitle(title);
         stage.getIcons().add(new Image("Laptev/Visual/icon.png"));
         stage.setMinWidth(600);
         stage.setMinHeight(100);
         stage.setX(475);
         stage.setY(613);
 
-        Slider slider = new Slider(0, 255, 200);
-
+        Slider slider = new Slider(v, v1, v2);
         slider.setShowTickLabels(true);
         slider.setShowTickMarks(true);
         slider.setSnapToTicks(true);
-        slider.setBlockIncrement(10);
-        slider.setMajorTickUnit(50);
-        slider.setMinorTickCount(4);
+        slider.setBlockIncrement(inc);
+        slider.setMajorTickUnit(major);
+        slider.setMinorTickCount(minor);
 
         VBox layout = new VBox();
-        layout.getChildren().addAll(slider);
-        layout.setAlignment(Pos.CENTER);
+        switch (title) {
+            case "Бинаризация":
+                layout = new VBox();
+                layout.getChildren().addAll(slider);
+                layout.setAlignment(Pos.CENTER);
 
+                slider.valueProperty().addListener((observable, oldValue, newValue) -> binaryFoo(newValue.intValue()));
+                break;
+            case "Яркость":
+                layout = new VBox();
+                layout.getChildren().addAll(slider);
+                layout.setAlignment(Pos.CENTER);
+
+                slider.valueProperty().addListener((observable, oldValue, newValue) -> brightnessFoo(newValue.intValue()));
+                break;
+            case "Котрастность":
+                Slider slider2 = new Slider(0, 2, 1);
+                slider2.setShowTickLabels(true);
+                slider2.setShowTickMarks(true);
+                slider2.setSnapToTicks(true);
+                slider2.setBlockIncrement(0.1);
+                slider2.setMajorTickUnit(0.5);
+                slider2.setMinorTickCount(4);
+
+                layout = new VBox(10);
+                layout.setAlignment(Pos.CENTER);
+                layout.setSpacing(10);
+                layout.getChildren().addAll(slider, slider2);
+
+                slider.valueProperty().addListener((observable, oldValue, newValue) -> contrastFoo(newValue.doubleValue()));
+                slider2.valueProperty().addListener((observable, oldValue, newValue) -> u = newValue.doubleValue());
+                break;
+        }
         Scene scene = new Scene(layout);
         stage.setScene(scene);
         stage.show();
-
-        slider.valueProperty().addListener((observable, oldValue, newValue) -> binaryFoo(newValue.intValue()));
     }
 
-    private void openSliderBrightness() {
-        Stage stage = new Stage();
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("Яркость");
-        stage.getIcons().add(new Image("Laptev/Visual/icon.png"));
-        stage.setMinWidth(600);
-        stage.setMinHeight(100);
-        stage.setX(475);
-        stage.setY(613);
-
-        Slider slider = new Slider(0, 100, 50);
-
-        slider.setShowTickLabels(true);
-        slider.setShowTickMarks(true);
-        slider.setSnapToTicks(true);
-        slider.setBlockIncrement(5);
-        slider.setMajorTickUnit(25);
-        slider.setMinorTickCount(4);
-
-        VBox layout = new VBox();
-        layout.getChildren().addAll(slider);
-        layout.setAlignment(Pos.CENTER);
-
-        Scene scene = new Scene(layout);
-        stage.setScene(scene);
-        stage.show();
-
-        slider.valueProperty().addListener((observable, oldValue, newValue) -> brightnessFoo(newValue.intValue()));
-    }
-
-    private void openSliderContrast() {
-        Stage stage = new Stage();
-        stage.initModality(Modality.APPLICATION_MODAL);
-        stage.setTitle("Котрастность");
-        stage.getIcons().add(new Image("Laptev/Visual/icon.png"));
-        stage.setMinWidth(600);
-        stage.setMinHeight(100);
-        stage.setX(475);
-        stage.setY(613);
-
-        Slider slider1 = new Slider(0, 10, 5);
-
-        slider1.setShowTickLabels(true);
-        slider1.setShowTickMarks(true);
-        slider1.setSnapToTicks(true);
-        slider1.setBlockIncrement(0.2);
-        slider1.setMajorTickUnit(1);
-        slider1.setMinorTickCount(4);
-
-        Slider slider2 = new Slider(0, 2, 1);
-
-        slider2.setShowTickLabels(true);
-        slider2.setShowTickMarks(true);
-        slider2.setSnapToTicks(true);
-        slider2.setBlockIncrement(0.1);
-        slider2.setMajorTickUnit(0.5);
-        slider2.setMinorTickCount(4);
-
-        VBox layout = new VBox(10);
-        layout.setAlignment(Pos.CENTER);
-        layout.setSpacing(10);
-        layout.getChildren().addAll(slider1, slider2);
-        layout.setAlignment(Pos.CENTER);
-
-        Scene scene = new Scene(layout);
-        stage.setScene(scene);
-        stage.show();
-
-        slider1.valueProperty().addListener((observable, oldValue, newValue) -> contrastFoo(newValue.doubleValue()));
-        slider2.valueProperty().addListener((observable, oldValue, newValue) -> u = newValue.doubleValue());
-    }
-
+    @FXML
     public void undo() {
         if (count > 0) {
             count--;
@@ -416,6 +372,7 @@ public class Controller {
         }
     }
 
+    @FXML
     public void redo() {
         if (count < arrayImgList.size() - 1) {
             count++;
@@ -426,109 +383,290 @@ public class Controller {
     }
 
     @FXML
-    public void lfFilter() {
-        filter3x3(H1, c1);
-        //    filter5x5(H1_5x5, c1_5x5);
-        //    filter7x7(H1_7x7, c1_7x7);
+    public void Filter() throws IOException {
+        openMasks();
     }
 
     @FXML
-    public void hfFilter() {
-        filter3x3(H4, 1);
+    public void medianFilter() {
+        filter(H1_5x5);
     }
 
     @FXML
-    public void medianFilter(){
-        filter3x3();
+    public void medianFilterPlus() {
+        filterPlus(H1_5x5);
     }
-    void filter3x3(){
+
+    @FXML
+    public void DFT(){
         if (sourceImg != null) {
-            int [] tmpArr = new int[9];
-            for (int y = 1; y < sourceImgHeight - 1; y++) {
-                for (int x = 1; x < sourceImgWidth - 1; x++) {
 
-                    tmpArr[0] = redMatrix[y - 1][x - 1];
-                    tmpArr[1] = redMatrix[y - 1][x];
-                    tmpArr[2] = redMatrix[y - 1][x + 1];
-                    tmpArr[3] = redMatrix[y][x - 1];
-                    tmpArr[4] = redMatrix[y][x];
-                    tmpArr[5] = redMatrix[y][x + 1];
-                    tmpArr[6] = redMatrix[y + 1][x - 1];
-                    tmpArr[7] = redMatrix[y + 1][x];
-                    tmpArr[8] = redMatrix[y + 1][x + 1];
+            Mat image = new Mat();
+            Mat bmat = new Mat();
+            Mat m = new Mat();
+            image = Imgcodecs.imread(fileImg.getAbsolutePath(), Imgcodecs.IMREAD_GRAYSCALE);
 
-                    Arrays.sort(tmpArr);
-                    int newRed = tmpArr[4];
+            Imgproc.cvtColor(m, image, Imgproc.COLOR_RGB2GRAY);
+            image.convertTo(image, CvType.CV_64F);
+            Core.dft(image,bmat);
 
-                    tmpArr[0] = greenMatrix[y - 1][x - 1];
-                    tmpArr[1] = greenMatrix[y - 1][x];
-                    tmpArr[2] = greenMatrix[y - 1][x + 1];
-                    tmpArr[3] = greenMatrix[y][x - 1];
-                    tmpArr[4] = greenMatrix[y][x];
-                    tmpArr[5] = greenMatrix[y][x + 1];
-                    tmpArr[6] = greenMatrix[y + 1][x - 1];
-                    tmpArr[7] = greenMatrix[y + 1][x];
-                    tmpArr[8] = greenMatrix[y + 1][x + 1];
+            Core.idft(bmat,bmat);
+            Core.normalize(bmat, bmat, 0, 255, Core.NORM_MINMAX);
+            image.convertTo(bmat, CvType.CV_8U);
 
-                    Arrays.sort(tmpArr);
-                    int newGreen = tmpArr[4];
 
-                    tmpArr[0] = blueMatrix[y - 1][x - 1];
-                    tmpArr[1] = blueMatrix[y - 1][x];
-                    tmpArr[2] = blueMatrix[y - 1][x + 1];
-                    tmpArr[3] = blueMatrix[y][x - 1];
-                    tmpArr[4] = blueMatrix[y][x];
-                    tmpArr[5] = blueMatrix[y][x + 1];
-                    tmpArr[6] = blueMatrix[y + 1][x - 1];
-                    tmpArr[7] = blueMatrix[y + 1][x];
-                    tmpArr[8] = blueMatrix[y + 1][x + 1];
+            imgView.setImage(mat2Image(image));
 
-                    Arrays.sort(tmpArr);
-                    int newBlue = tmpArr[4];
+
+            System.out.println("Преобразование Фурье\n");
+        } else {
+            System.out.println("Изображение не найдено\n");
+        }
+    }
+
+    private void openMasks() throws IOException {
+        Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.setTitle("Выбор маски");
+        stage.getIcons().add(new Image("Laptev/Visual/icon.png"));
+
+        File file1 = new File("D:/Masks/H1.png");
+        File file2 = new File("D:/Masks/H1_5x5.png");
+        File file3 = new File("D:/Masks/H1_7x7.png");
+        File file4 = new File("D:/Masks/H4.png");
+        File file5 = new File("D:/Masks/H5.png");
+        File file6 = new File("D:/Masks/H6.jpg");
+
+        ImageView img1 = img(file1);
+        ImageView img2 = img(file2);
+        ImageView img3 = img(file3);
+        ImageView img4 = img(file4);
+        ImageView img5 = img(file5);
+        ImageView img6 = img(file6);
+
+        GridPane layout = new GridPane();
+
+        layout.getColumnConstraints().add(new ColumnConstraints(200));
+        layout.getColumnConstraints().add(new ColumnConstraints(200));
+        layout.getColumnConstraints().add(new ColumnConstraints(200));
+        layout.getColumnConstraints().add(new ColumnConstraints(200));
+        layout.getColumnConstraints().add(new ColumnConstraints(200));
+        layout.getRowConstraints().add(new RowConstraints(200));
+        layout.getRowConstraints().add(new RowConstraints(200));
+        layout.setHgap(10);
+        layout.setVgap(10);
+        layout.setPadding(new Insets(30, 30, 30, 30));
+
+        Label label1 = new Label("Низкочастотные маски:");
+        Label label2 = new Label("Высокочастотные маски:");
+        Label label3 = new Label("Своя маска");
+        label1.setFont(new Font(16));
+        label2.setFont(new Font(16));
+        label3.setFont(new Font(16));
+
+        Button button = new Button("Своя маска");
+        button.setFont(new Font(16));
+        button.setMinSize(100,60);
+
+        layout.add(label1, 0, 0);
+        layout.add(img1, 1, 0);
+        layout.add(img2, 2, 0);
+        layout.add(img3, 3, 0);
+        layout.add(label2, 0, 1);
+        layout.add(img4, 1, 1);
+        layout.add(img5, 2, 1);
+        layout.add(img6, 3, 1);
+        layout.add(button, 4, 1);
+
+        stage.setScene(new Scene(layout));
+        stage.show();
+
+        img1.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H1\n");
+            filter(H1, c1);
+            stage.close();
+        });
+        img2.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H1_5х5\n");
+            filter(H1_5x5, c1_5x5);
+            stage.close();
+        });
+        img3.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H1_7х7\n");
+            filter(H1_7x7, c1_7x7);
+            stage.close();
+        });
+        img4.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H4\n");
+            filter(H4, 1);
+            stage.close();
+        });
+        img5.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H5\n");
+            filter(H5, 1);
+            stage.close();
+        });
+        img6.setOnMouseClicked(e -> {
+            System.out.println("Выбрана маска H6\n");
+            filter(H6, 1);
+            stage.close();
+        });
+        button.setOnMouseClicked(e -> {
+            System.out.println("Выбрана своя маска\n");
+            try {
+                creatingMask();
+            } catch (IOException ioException) {
+                System.out.println("Ошибка открытия окна для создание маски");
+            }
+            int x_y = matrix.length;
+            int c = 0;
+            for (int[] matrix : matrix) {
+                for (int j = 0; j < x_y; j++) {
+                    c += matrix[j];
+                }
+            }
+            filter(matrix, c);
+            stage.close();
+        });
+    }
+
+    private ImageView img(File file) throws MalformedURLException {
+        String localUrl = file.toURI().toURL().toString();
+        Image image1 = new Image(localUrl, 150, 150, false, false);
+        return new ImageView(image1);
+    }
+
+    private void filterPlus(int[][] H) {
+        if (sourceImg != null) {
+            System.out.println("Фильтрация выполняется");
+
+            int board = (H.length - 1) / 2;
+            int boardHeight = sourceImgHeight - board;
+            int boardWidth = sourceImgWidth - board;
+            int[] tmpArr1 = new int[H.length + H.length - 1];
+            int[] tmpArr2 = new int[H.length + H.length - 1];
+            int[] tmpArr3 = new int[H.length + H.length - 1];
+
+            for (int y = board; y < boardHeight; y++) {
+                for (int x = board; x < boardWidth; x++) {
+                    int yMask = 0, xMask = 0;
+                    int count = 0;
+                    for (int yImg = y - board; yMask < H.length; yImg++, yMask++, count++) {
+                        tmpArr1[count] = redMatrix[yImg][x];
+                        tmpArr2[count] = greenMatrix[yImg][x];
+                        tmpArr3[count] = blueMatrix[yImg][x];
+                    }
+                    for (int xImg = x - board; xMask < H.length / 2; xImg++, xMask++, count++) {
+                        tmpArr1[count] = redMatrix[y][xImg];
+                        tmpArr2[count] = greenMatrix[y][xImg];
+                        tmpArr3[count] = blueMatrix[y][xImg];
+                    }
+                    for (int xImg = x; xMask < H.length / 2; xImg++, xMask++, count++) {
+                        tmpArr1[count] = redMatrix[y][xImg];
+                        tmpArr2[count] = greenMatrix[y][xImg];
+                        tmpArr3[count] = blueMatrix[y][xImg];
+                    }
+
+                    Arrays.sort(tmpArr1);
+                    int newRed = tmpArr1[tmpArr1.length / 2];
+                    Arrays.sort(tmpArr2);
+                    int newGreen = tmpArr2[tmpArr2.length / 2];
+                    Arrays.sort(tmpArr3);
+                    int newBlue = tmpArr3[tmpArr2.length / 2];
 
                     Color newColor = new Color(newRed, newGreen, newBlue);
 
                     result.setRGB(x, y, newColor.getRGB());
                 }
             }
-
-            javafx.scene.image.Image pict = SwingFXUtils.toFXImage(result, null);
-
-            imgView.setImage(pict);
-            sourceImg = pict;
-            arrayImgList.add(pict);
-            count++;
-
-            System.out.println("Фильтрация выполнена 3х3\n");
+            setImage(result);
+            sourceImg = SwingFXUtils.toFXImage(result, null);
+            System.out.println("Фильтрация выполнена\n");
         } else {
             System.out.println("Изображение не найдено\n");
         }
     }
 
-    void filter3x3(int[][] H, int c) {
+    private void filter(int[][] H) {
         if (sourceImg != null) {
-            for (int y = 1; y < sourceImgHeight - 1; y++) {
-                for (int x = 1; x < sourceImgWidth - 1; x++) {
+            System.out.println("Фильтрация выполняется");
 
-                    int newRed = (H[0][0] * redMatrix[y - 1][x - 1] + H[0][1] * redMatrix[y - 1][x] + H[0][2] * redMatrix[y - 1][x + 1]
-                            + H[1][0] * redMatrix[y][x - 1] + H[1][1] * redMatrix[y][x] + H[1][2] * redMatrix[y][x + 1]
-                            + H[2][0] * redMatrix[y + 1][x - 1] + H[2][1] * redMatrix[y + 1][x] + H[2][2] * redMatrix[y + 1][x + 1]) / c;
+            int board = (H.length - 1) / 2;
+            int boardHeight = sourceImgHeight - board;
+            int boardWidth = sourceImgWidth - board;
+            int[] tmpArr1 = new int[H.length * H.length];
+            int[] tmpArr2 = new int[H.length * H.length];
+            int[] tmpArr3 = new int[H.length * H.length];
+
+            for (int y = board; y < boardHeight; y++) {
+                for (int x = board; x < boardWidth; x++) {
+                    int yMask = 0, xMask = 0;
+
+                    for (int yImg = y - board; yMask < H.length; yImg++, yMask++) {
+                        for (int xImg = x - board; xMask < H.length; xImg++, xMask++) {
+                            tmpArr1[yMask * xMask] = redMatrix[yImg][xImg];
+                            tmpArr2[yMask * xMask] = greenMatrix[yImg][xImg];
+                            tmpArr3[yMask * xMask] = blueMatrix[yImg][xImg];
+                        }
+                        xMask = 0;
+                    }
+                    Arrays.sort(tmpArr1);
+                    int newRed = tmpArr1[tmpArr1.length / 2];
+                    Arrays.sort(tmpArr2);
+                    int newGreen = tmpArr2[tmpArr2.length / 2];
+                    Arrays.sort(tmpArr3);
+                    int newBlue = tmpArr3[tmpArr2.length / 2];
+
+                    Color newColor = new Color(newRed, newGreen, newBlue);
+
+                    result.setRGB(x, y, newColor.getRGB());
+                }
+            }
+            setImage(result);
+            sourceImg = SwingFXUtils.toFXImage(result, null);
+
+            System.out.println("Фильтрация выполнена\n");
+        } else {
+            System.out.println("Изображение не найдено\n");
+        }
+    }
+
+    private void filter(int[][] H, int c) {
+        System.out.println("Фильтрация выполняется");
+        if (sourceImg != null) {
+            int board = (H.length - 1) / 2;
+            int boardHeight = sourceImgHeight - board;
+            int boardWidth = sourceImgWidth - board;
+
+            for (int y = board; y < boardHeight; y++) {
+                for (int x = board; x < boardWidth; x++) {
+                    int yMask = 0, xMask = 0;
+                    int newRed = 0;
+                    int newGreen = 0;
+                    int newBlue = 0;
+                    for (int yImg = y - board; yMask < H.length; yImg++, yMask++) {
+                        for (int xImg = x - board; xMask < H.length; xImg++, xMask++) {
+                            newRed += redMatrix[yImg][xImg] * H[yMask][xMask];
+                            newGreen += greenMatrix[yImg][xImg] * H[yMask][xMask];
+                            newBlue += blueMatrix[yImg][xImg] * H[yMask][xMask];
+                        }
+                        xMask = 0;
+                    }
+
+                    newRed /= c;
+                    newGreen /= c;
+                    newBlue /= c;
+
                     if (newRed > 255)
                         newRed = 255;
                     else if (newRed < 0)
                         newRed = 0;
 
-                    int newGreen = (H[0][0] * greenMatrix[y - 1][x - 1] + H[0][1] * greenMatrix[y - 1][x] + H[0][2] * greenMatrix[y - 1][x + 1]
-                            + H[1][0] * greenMatrix[y][x - 1] + H[1][1] * greenMatrix[y][x] + H[1][2] * greenMatrix[y][x + 1]
-                            + H[2][0] * greenMatrix[y + 1][x - 1] + H[2][1] * greenMatrix[y + 1][x] + H[2][2] * greenMatrix[y + 1][x + 1]) / c;
                     if (newGreen > 255)
                         newGreen = 255;
                     else if (newGreen < 0)
                         newGreen = 0;
 
-                    int newBlue = (H[0][0] * blueMatrix[y - 1][x - 1] + H[0][1] * blueMatrix[y - 1][x] + H[0][2] * blueMatrix[y - 1][x + 1]
-                            + H[1][0] * blueMatrix[y][x - 1] + H[1][1] * blueMatrix[y][x] + H[1][2] * blueMatrix[y][x + 1]
-                            + H[2][0] * blueMatrix[y + 1][x - 1] + H[2][1] * blueMatrix[y + 1][x] + H[2][2] * blueMatrix[y + 1][x + 1]) / c;
                     if (newBlue > 255)
                         newBlue = 255;
                     else if (newBlue < 0)
@@ -539,129 +677,41 @@ public class Controller {
                     result.setRGB(x, y, newColor.getRGB());
                 }
             }
+            setImage(result);
+            sourceImg = SwingFXUtils.toFXImage(result, null);
 
-            javafx.scene.image.Image pict = SwingFXUtils.toFXImage(result, null);
-
-            imgView.setImage(pict);
-            sourceImg = pict;
-            arrayImgList.add(pict);
-            count++;
-
-            System.out.println("Фильтрация выполнена 3х3\n");
+            System.out.println("Фильтрация выполнена\n");
         } else {
             System.out.println("Изображение не найдено\n");
         }
     }
 
-    void filter5x5(int[][] H, int c) {
-        if (sourceImg != null) {
-            for (int y = 2; y < sourceImgHeight - 2; y++) {
-                for (int x = 2; x < sourceImgWidth - 2; x++) {
+    public void creatingMask() throws IOException {
+        Stage stage = new Stage();
 
-                    int newRed = (H[0][0] * redMatrix[y - 2][x - 2] + H[0][1] * redMatrix[y - 2][x - 1] + H[0][2] * redMatrix[y - 2][x] + H[0][3] * redMatrix[y - 2][x + 1] + H[0][4] * redMatrix[y - 2][x + 2]
-                            + H[1][0] * redMatrix[y - 1][x - 2] + H[1][1] * redMatrix[y - 1][x - 1] + H[1][2] * redMatrix[y - 1][x] + H[1][3] * redMatrix[y - 1][x + 1] + H[1][4] * redMatrix[y - 1][x + 2]
-                            + H[2][0] * redMatrix[y][x - 2] + H[2][1] * redMatrix[y][x - 1] + H[2][2] * redMatrix[y][x] + H[2][3] * redMatrix[y][x + 1] + H[2][4] * redMatrix[y][x + 2]
-                            + H[3][0] * redMatrix[y + 1][x - 2] + H[3][1] * redMatrix[y + 1][x - 1] + H[3][2] * redMatrix[y + 1][x] + H[3][3] * redMatrix[y + 1][x + 1] + H[3][4] * redMatrix[y + 1][x + 2]
-                            + H[4][0] * redMatrix[y + 2][x - 2] + H[4][1] * redMatrix[y + 2][x - 1] + H[4][2] * redMatrix[y + 2][x] + H[4][3] * redMatrix[y + 2][x + 1] + H[4][4] * redMatrix[y + 2][x + 2]) / c;
-                    if (newRed > 255)
-                        newRed = 255;
-                    else if (newRed < 0)
-                        newRed = 0;
+        FXMLLoader loader = new FXMLLoader();
+        loader.setLocation(getClass().getResource("/Laptev/Visual/Mask.fxml"));
+        Parent root = loader.load();
 
-                    int newGreen = (H[0][0] * greenMatrix[y - 2][x - 2] + H[0][1] * greenMatrix[y - 2][x - 1] + H[0][2] * greenMatrix[y - 2][x] + H[0][3] * greenMatrix[y - 2][x + 1] + H[0][4] * greenMatrix[y - 2][x + 2]
-                            + H[1][0] * greenMatrix[y - 1][x - 2] + H[1][1] * greenMatrix[y - 1][x - 1] + H[1][2] * greenMatrix[y - 1][x] + H[1][3] * greenMatrix[y - 1][x + 1] + H[1][4] * greenMatrix[y - 1][x + 2]
-                            + H[2][0] * greenMatrix[y][x - 2] + H[2][1] * greenMatrix[y][x - 1] + H[2][2] * greenMatrix[y][x] + H[2][3] * greenMatrix[y][x + 1] + H[2][4] * greenMatrix[y][x + 2]
-                            + H[3][0] * greenMatrix[y + 1][x - 2] + H[3][1] * greenMatrix[y + 1][x - 1] + H[3][2] * greenMatrix[y + 1][x] + H[3][3] * greenMatrix[y + 1][x + 1] + H[3][4] * greenMatrix[y + 1][x + 2]
-                            + H[4][0] * greenMatrix[y + 2][x - 2] + H[4][1] * greenMatrix[y + 2][x - 1] + H[4][2] * greenMatrix[y + 2][x] + H[4][3] * greenMatrix[y + 2][x + 1] + H[4][4] * greenMatrix[y + 2][x + 2]) / c;
-                    if (newGreen > 255)
-                        newGreen = 255;
-                    else if (newGreen < 0)
-                        newGreen = 0;
-
-                    int newBlue = (H[0][0] * blueMatrix[y - 2][x - 2] + H[0][1] * blueMatrix[y - 2][x - 1] + H[0][2] * blueMatrix[y - 2][x] + H[0][3] * blueMatrix[y - 2][x + 1] + H[0][4] * blueMatrix[y - 2][x + 2]
-                            + H[1][0] * blueMatrix[y - 1][x - 2] + H[1][1] * blueMatrix[y - 1][x - 1] + H[1][2] * blueMatrix[y - 1][x] + H[1][3] * blueMatrix[y - 1][x + 1] + H[1][4] * blueMatrix[y - 1][x + 2]
-                            + H[2][0] * blueMatrix[y][x - 2] + H[2][1] * blueMatrix[y][x - 1] + H[2][2] * blueMatrix[y][x] + H[2][3] * blueMatrix[y][x + 1] + H[2][4] * blueMatrix[y][x + 2]
-                            + H[3][0] * blueMatrix[y + 1][x - 2] + H[3][1] * blueMatrix[y + 1][x - 1] + H[3][2] * blueMatrix[y + 1][x] + H[3][3] * blueMatrix[y + 1][x + 1] + H[3][4] * blueMatrix[y + 1][x + 2]
-                            + H[4][0] * blueMatrix[y + 2][x - 2] + H[4][1] * blueMatrix[y + 2][x - 1] + H[4][2] * blueMatrix[y + 2][x] + H[4][3] * blueMatrix[y + 2][x + 1] + H[4][4] * blueMatrix[y + 2][x + 2]) / c;
-                    if (newBlue > 255)
-                        newBlue = 255;
-                    else if (newBlue < 0)
-                        newBlue = 0;
-
-                    Color newColor = new Color(newRed, newGreen, newBlue);
-
-                    result.setRGB(x, y, newColor.getRGB());
-                }
-            }
-
-            javafx.scene.image.Image pict = SwingFXUtils.toFXImage(result, null);
-            imgView.setImage(pict);
-            sourceImg = pict;
-            arrayImgList.add(pict);
-            count++;
-
-            System.out.println("Фильтрация выполнена 5х5\n");
-        } else {
-            System.out.println("Изображение не найдено\n");
-        }
+        stage.getIcons().add(new Image("/Laptev/Visual/icon.png"));
+        stage.setTitle("Создание маски");
+        stage.setScene(new Scene(root));
+        stage.showAndWait();
     }
 
-    void filter7x7(int[][] H, int c) {
-        if (sourceImg != null) {
-            for (int y = 3; y < sourceImgHeight - 3; y++) {
-                for (int x = 3; x < sourceImgWidth - 3; x++) {
+    public void okAction() {
+        Stage stage = (Stage) btn.getScene().getWindow();
 
-                    int newRed = (H[0][0] * redMatrix[y - 3][x - 3] + H[0][1] * redMatrix[y - 3][x - 2] + H[0][2] * redMatrix[y - 3][x - 1] + H[0][3] * redMatrix[y - 3][x] + H[0][4] * redMatrix[y - 3][x + 1] + H[0][5] * redMatrix[y - 3][x + 2] + H[0][6] * redMatrix[y - 3][x + 3]
-                            + H[1][0] * redMatrix[y - 2][x - 3] + H[1][1] * redMatrix[y - 2][x - 2] + H[1][2] * redMatrix[y - 2][x - 1] + H[1][3] * redMatrix[y - 2][x] + H[1][4] * redMatrix[y - 2][x + 1] + H[1][5] * redMatrix[y - 2][x + 2] + H[1][6] * redMatrix[y - 2][x + 3]
-                            + H[2][0] * redMatrix[y - 1][x - 3] + H[2][1] * redMatrix[y - 1][x - 2] + H[2][2] * redMatrix[y - 1][x - 1] + H[2][3] * redMatrix[y - 1][x] + H[2][4] * redMatrix[y - 1][x + 1] + H[2][5] * redMatrix[y - 1][x + 2] + H[2][6] * redMatrix[y - 1][x + 3]
-                            + H[3][0] * redMatrix[y][x - 3] + H[3][1] * redMatrix[y][x - 2] + H[3][2] * redMatrix[y][x - 1] + H[3][3] * redMatrix[y][x] + H[3][4] * redMatrix[y][x + 1] + H[3][5] * redMatrix[y][x + 2] + H[3][6] * redMatrix[y][x + 3]
-                            + H[4][0] * redMatrix[y + 1][x - 3] + H[4][1] * redMatrix[y + 1][x - 2] + H[4][2] * redMatrix[y + 1][x - 1] + H[4][3] * redMatrix[y + 1][x] + H[4][4] * redMatrix[y + 1][x + 1] + H[4][5] * redMatrix[y + 1][x + 2] + H[4][6] * redMatrix[y + 1][x + 3]
-                            + H[5][0] * redMatrix[y + 2][x - 3] + H[5][1] * redMatrix[y + 2][x - 2] + H[5][2] * redMatrix[y + 2][x - 1] + H[5][3] * redMatrix[y + 2][x] + H[5][4] * redMatrix[y + 2][x + 1] + H[5][5] * redMatrix[y + 2][x + 2] + H[5][6] * redMatrix[y + 2][x + 3]
-                            + H[6][0] * redMatrix[y + 3][x - 3] + H[6][1] * redMatrix[y + 3][x - 2] + H[6][2] * redMatrix[y + 3][x - 1] + H[6][3] * redMatrix[y + 3][x] + H[6][4] * redMatrix[y + 3][x + 1] + H[6][5] * redMatrix[y + 3][x + 2] + H[6][6] * redMatrix[y + 3][x + 3]) / c;
-                    if (newRed > 255)
-                        newRed = 255;
-                    else if (newRed < 0)
-                        newRed = 0;
+        matrix[0][0] = Integer.parseInt(text1.getText());
+        matrix[0][1] = Integer.parseInt(text2.getText());
+        matrix[0][2] = Integer.parseInt(text3.getText());
+        matrix[1][0] = Integer.parseInt(text4.getText());
+        matrix[1][1] = Integer.parseInt(text5.getText());
+        matrix[1][2] = Integer.parseInt(text6.getText());
+        matrix[2][0] = Integer.parseInt(text7.getText());
+        matrix[2][1] = Integer.parseInt(text8.getText());
+        matrix[2][2] = Integer.parseInt(text9.getText());
 
-                    int newGreen = (H[0][0] * greenMatrix[y - 3][x - 3] + H[0][1] * greenMatrix[y - 3][x - 2] + H[0][2] * greenMatrix[y - 3][x - 1] + H[0][3] * greenMatrix[y - 3][x] + H[0][4] * greenMatrix[y - 3][x + 1] + H[0][5] * greenMatrix[y - 3][x + 2] + H[0][6] * greenMatrix[y - 3][x + 3]
-                            + H[1][0] * greenMatrix[y - 2][x - 3] + H[1][1] * greenMatrix[y - 2][x - 2] + H[1][2] * greenMatrix[y - 2][x - 1] + H[1][3] * greenMatrix[y - 2][x] + H[1][4] * greenMatrix[y - 2][x + 1] + H[1][5] * greenMatrix[y - 2][x + 2] + H[1][6] * greenMatrix[y - 2][x + 3]
-                            + H[2][0] * greenMatrix[y - 1][x - 3] + H[2][1] * greenMatrix[y - 1][x - 2] + H[2][2] * greenMatrix[y - 1][x - 1] + H[2][3] * greenMatrix[y - 1][x] + H[2][4] * greenMatrix[y - 1][x + 1] + H[2][5] * greenMatrix[y - 1][x + 2] + H[2][6] * greenMatrix[y - 1][x + 3]
-                            + H[3][0] * greenMatrix[y][x - 3] + H[3][1] * greenMatrix[y][x - 2] + H[3][2] * greenMatrix[y][x - 1] + H[3][3] * greenMatrix[y][x] + H[3][4] * greenMatrix[y][x + 1] + H[3][5] * greenMatrix[y][x + 2] + H[3][6] * greenMatrix[y][x + 3]
-                            + H[4][0] * greenMatrix[y + 1][x - 3] + H[4][1] * greenMatrix[y + 1][x - 2] + H[4][2] * greenMatrix[y + 1][x - 1] + H[4][3] * greenMatrix[y + 1][x] + H[4][4] * greenMatrix[y + 1][x + 1] + H[4][5] * greenMatrix[y + 1][x + 2] + H[4][6] * greenMatrix[y + 1][x + 3]
-                            + H[5][0] * greenMatrix[y + 2][x - 3] + H[5][1] * greenMatrix[y + 2][x - 2] + H[5][2] * greenMatrix[y + 2][x - 1] + H[5][3] * greenMatrix[y + 2][x] + H[5][4] * greenMatrix[y + 2][x + 1] + H[5][5] * greenMatrix[y + 2][x + 2] + H[5][6] * greenMatrix[y + 2][x + 3]
-                            + H[6][0] * greenMatrix[y + 3][x - 3] + H[6][1] * greenMatrix[y + 3][x - 2] + H[6][2] * greenMatrix[y + 3][x - 1] + H[6][3] * greenMatrix[y + 3][x] + H[6][4] * greenMatrix[y + 3][x + 1] + H[6][5] * greenMatrix[y + 3][x + 2] + H[6][6] * greenMatrix[y + 3][x + 3]) / c;
-                    if (newGreen > 255)
-                        newGreen = 255;
-                    else if (newGreen < 0)
-                        newGreen = 0;
-
-                    int newBlue = (H[0][0] * blueMatrix[y - 3][x - 3] + H[0][1] * blueMatrix[y - 3][x - 2] + H[0][2] * blueMatrix[y - 3][x - 1] + H[0][3] * blueMatrix[y - 3][x] + H[0][4] * blueMatrix[y - 3][x + 1] + H[0][5] * blueMatrix[y - 3][x + 2] + H[0][6] * blueMatrix[y - 3][x + 3]
-                            + H[1][0] * blueMatrix[y - 2][x - 3] + H[1][1] * blueMatrix[y - 2][x - 2] + H[1][2] * blueMatrix[y - 2][x - 1] + H[1][3] * blueMatrix[y - 2][x] + H[1][4] * blueMatrix[y - 2][x + 1] + H[1][5] * blueMatrix[y - 2][x + 2] + H[1][6] * blueMatrix[y - 2][x + 3]
-                            + H[2][0] * blueMatrix[y - 1][x - 3] + H[2][1] * blueMatrix[y - 1][x - 2] + H[2][2] * blueMatrix[y - 1][x - 1] + H[2][3] * blueMatrix[y - 1][x] + H[2][4] * blueMatrix[y - 1][x + 1] + H[2][5] * blueMatrix[y - 1][x + 2] + H[2][6] * blueMatrix[y - 1][x + 3]
-                            + H[3][0] * blueMatrix[y][x - 3] + H[3][1] * blueMatrix[y][x - 2] + H[3][2] * blueMatrix[y][x - 1] + H[3][3] * blueMatrix[y][x] + H[3][4] * blueMatrix[y][x + 1] + H[3][5] * blueMatrix[y][x + 2] + H[3][6] * blueMatrix[y][x + 3]
-                            + H[4][0] * blueMatrix[y + 1][x - 3] + H[4][1] * blueMatrix[y + 1][x - 2] + H[4][2] * blueMatrix[y + 1][x - 1] + H[4][3] * blueMatrix[y + 1][x] + H[4][4] * blueMatrix[y + 1][x + 1] + H[4][5] * blueMatrix[y + 1][x + 2] + H[4][6] * blueMatrix[y + 1][x + 3]
-                            + H[5][0] * blueMatrix[y + 2][x - 3] + H[5][1] * blueMatrix[y + 2][x - 2] + H[5][2] * blueMatrix[y + 2][x - 1] + H[5][3] * blueMatrix[y + 2][x] + H[5][4] * blueMatrix[y + 2][x + 1] + H[5][5] * blueMatrix[y + 2][x + 2] + H[5][6] * blueMatrix[y + 2][x + 3]
-                            + H[6][0] * blueMatrix[y + 3][x - 3] + H[6][1] * blueMatrix[y + 3][x - 2] + H[6][2] * blueMatrix[y + 3][x - 1] + H[6][3] * blueMatrix[y + 3][x] + H[6][4] * blueMatrix[y + 3][x + 1] + H[6][5] * blueMatrix[y + 3][x + 2] + H[6][6] * blueMatrix[y + 3][x + 3]) / c;
-                    if (newBlue > 255)
-                        newBlue = 255;
-                    else if (newBlue < 0)
-                        newBlue = 0;
-
-                    Color newColor = new Color(newRed, newGreen, newBlue);
-
-                    result.setRGB(x, y, newColor.getRGB());
-                }
-            }
-
-            Image pict = SwingFXUtils.toFXImage(result, null);
-            imgView.setImage(pict);
-            sourceImg = pict;
-            arrayImgList.add(pict);
-            count++;
-
-            System.out.println("Фильтрация выполнена 7х7\n");
-        } else {
-            System.out.println("Изображение не найдено\n");
-        }
+        stage.close();
     }
 }

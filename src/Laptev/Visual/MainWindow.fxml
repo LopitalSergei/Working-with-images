@@ -2,15 +2,28 @@
 
 <?import javafx.scene.control.*?>
 <?import javafx.scene.image.*?>
+<?import javafx.scene.input.*?>
 <?import javafx.scene.layout.*?>
 
 <VBox maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" xmlns="http://javafx.com/javafx/11.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="Laptev.Core.Controller">
     <MenuBar>
         <Menu mnemonicParsing="false" text="File">
             <MenuItem mnemonicParsing="false" onAction="#openFile" text="Open" />
-            <MenuItem mnemonicParsing="false" onAction="#saveFile" text="Save" />
-            <MenuItem mnemonicParsing="false" onAction="#undo" text="Undo" />
-            <MenuItem mnemonicParsing="false" onAction="#redo" text="Redo" />
+            <MenuItem fx:id="save" mnemonicParsing="false" onAction="#saveFile" text="Save">
+                <accelerator>
+                    <KeyCodeCombination alt="UP" code="S" control="ANY" meta="UP" shift="UP" shortcut="UP" />
+                </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="undo_id" mnemonicParsing="false" onAction="#undo" text="Undo">
+                <accelerator>
+                    <KeyCodeCombination alt="UP" code="Z" control="ANY" meta="UP" shift="UP" shortcut="UP" />
+                </accelerator>
+            </MenuItem>
+            <MenuItem fx:id="redo_id" mnemonicParsing="false" onAction="#redo" text="Redo">
+                <accelerator>
+                    <KeyCodeCombination alt="UP" code="Y" control="ANY" meta="UP" shift="UP" shortcut="UP" />
+                </accelerator>
+            </MenuItem>
         </Menu>
         <Menu mnemonicParsing="false" text="Instrument">
             <MenuItem mnemonicParsing="false" onAction="#binary" text="Binary" />
@@ -20,9 +33,14 @@
             <MenuItem mnemonicParsing="false" onAction="#contrast" text="Contrast" />
         </Menu>
         <Menu mnemonicParsing="false" text="Filters">
-            <MenuItem mnemonicParsing="false" onAction="#lfFilter" text="lfFilter" />
-            <MenuItem mnemonicParsing="false" onAction="#hfFilter" text="hfFilter" />
-         <MenuItem mnemonicParsing="false" onAction="#medianFilter" text="medianFilter" />
+            <MenuItem mnemonicParsing="false" onAction="#Filter" text="Filter" />
+         <Menu mnemonicParsing="false" text="medianFilter">
+           <items>
+                  <MenuItem mnemonicParsing="false" onAction="#medianFilter" text="Filter" />
+             <MenuItem mnemonicParsing="false" onAction="#medianFilterPlus" text="FilterPlus" />
+           </items>
+         </Menu>
+         <MenuItem mnemonicParsing="false" onAction="#DFT" text="DFT" />
         </Menu>
     </MenuBar>
     <ImageView fx:id="imgView" fitHeight="450.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" />
