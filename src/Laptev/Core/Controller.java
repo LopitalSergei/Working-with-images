@@ -25,14 +25,14 @@ import javafx.stage.Stage;
 import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
-import org.opencv.core.Scalar;
+
 import org.opencv.imgcodecs.Imgcodecs;
 import org.opencv.imgproc.Imgproc;
 
 import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferByte;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -398,10 +398,10 @@ public class Controller {
     }
 
     @FXML
-    public void DFT(){
+    public void DFT() {
         if (sourceImg != null) {
 
-            Mat image = new Mat();
+           /* Mat image = new Mat();
             Mat bmat = new Mat();
             Mat m = new Mat();
             image = Imgcodecs.imread(fileImg.getAbsolutePath(), Imgcodecs.IMREAD_GRAYSCALE);
@@ -412,11 +412,7 @@ public class Controller {
 
             Core.idft(bmat,bmat);
             Core.normalize(bmat, bmat, 0, 255, Core.NORM_MINMAX);
-            image.convertTo(bmat, CvType.CV_8U);
-
-
-            imgView.setImage(mat2Image(image));
-
+            image.convertTo(bmat, CvType.CV_8U);*/
 
             System.out.println("Преобразование Фурье\n");
         } else {
@@ -466,7 +462,7 @@ public class Controller {
 
         Button button = new Button("Своя маска");
         button.setFont(new Font(16));
-        button.setMinSize(100,60);
+        button.setMinSize(100, 60);
 
         layout.add(label1, 0, 0);
         layout.add(img1, 1, 0);
@@ -688,6 +684,7 @@ public class Controller {
 
     public void creatingMask() throws IOException {
         Stage stage = new Stage();
+        stage.initModality(Modality.APPLICATION_MODAL);
 
         FXMLLoader loader = new FXMLLoader();
         loader.setLocation(getClass().getResource("/Laptev/Visual/Mask.fxml"));

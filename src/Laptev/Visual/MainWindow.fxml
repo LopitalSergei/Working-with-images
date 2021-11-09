@@ -34,13 +34,11 @@
         </Menu>
         <Menu mnemonicParsing="false" text="Filters">
             <MenuItem mnemonicParsing="false" onAction="#Filter" text="Filter" />
-         <Menu mnemonicParsing="false" text="medianFilter">
-           <items>
-                  <MenuItem mnemonicParsing="false" onAction="#medianFilter" text="Filter" />
-             <MenuItem mnemonicParsing="false" onAction="#medianFilterPlus" text="FilterPlus" />
-           </items>
-         </Menu>
-         <MenuItem mnemonicParsing="false" onAction="#DFT" text="DFT" />
+            <Menu mnemonicParsing="false" text="medianFilter">
+                <MenuItem mnemonicParsing="false" onAction="#medianFilter" text="Filter"/>
+                <MenuItem mnemonicParsing="false" onAction="#medianFilterPlus" text="FilterPlus"/>
+            </Menu>
+         <MenuItem mnemonicParsing="false" onAction="#DFT" text="Laptev.Core.DFT" />
         </Menu>
     </MenuBar>
     <ImageView fx:id="imgView" fitHeight="450.0" fitWidth="800.0" pickOnBounds="true" preserveRatio="true" />
