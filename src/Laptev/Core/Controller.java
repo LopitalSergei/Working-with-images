@@ -389,7 +389,7 @@ public class Controller {
 
     @FXML
     public void medianFilter() {
-        filter(H1_5x5);
+        filter(H1_7x7);
     }
 
     @FXML
@@ -401,7 +401,7 @@ public class Controller {
     public void DFT() {
         if (sourceImg != null) {
 
-           /* Mat image = new Mat();
+            Mat image = new Mat();
             Mat bmat = new Mat();
             Mat m = new Mat();
             image = Imgcodecs.imread(fileImg.getAbsolutePath(), Imgcodecs.IMREAD_GRAYSCALE);
@@ -412,7 +412,7 @@ public class Controller {
 
             Core.idft(bmat,bmat);
             Core.normalize(bmat, bmat, 0, 255, Core.NORM_MINMAX);
-            image.convertTo(bmat, CvType.CV_8U);*/
+            image.convertTo(bmat, CvType.CV_8U);
 
             System.out.println("Преобразование Фурье\n");
         } else {
